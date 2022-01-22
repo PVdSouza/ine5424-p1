@@ -66,26 +66,23 @@ protected:
     ARMv8() {};
 
 public:
-    // static Log_Addr pc() { Reg r; ASM("mov %0, pc" : "=r"(r) :); return r; } // due to RISC pipelining, PC is read with a +8 (4 for thumb) offset
+    static Log_Addr pc() { Reg r; ASM("nop"); return r; } // due to RISC pipelining, PC is read with a +8 (4 for thumb) offset
 
-    // static Log_Addr sp() { Reg r; ASM("mov %0, sp" : "=r"(r) :); return r; }
-    // static void sp(Log_Addr sp) { ASM("mov sp, %0" : : "r"(Reg(sp))); ASM("isb"); }
+    static Log_Addr sp() { Reg r; ASM("nop"); return r; }
+    static void sp(Log_Addr sp) { ASM("nop"); ASM("nop"); }
 
-    // static Reg fr() { Reg r; ASM("mov %0, r0" : "=r"(r)); return r; }
-    // static void fr(Reg r) {  ASM("mov r0, %0" : : "r"(r) : "r0"); }
+    static Reg fr() { Reg r; ASM("nop"); return r; }
+    static void fr(Reg r) {  ASM("nop"); }
 
-    // static Log_Addr ra() { Reg r; ASM("mov %0, lr" : "=r"(r) :); return r; } // due to RISC pipelining, PC is read with a +8 (4 for thumb) offset
+    static Log_Addr ra() { Reg r; ASM("nop"); return r; } // due to RISC pipelining, PC is read with a +8 (4 for thumb) offset
 
-    // static void halt() { ASM("wfi"); }
+    static void halt() { ASM("nop"); }
 
     template<typename T>
     static T tsl(volatile T & lock) {
         register T old;
         register T one = 1;
-        // ASM("1: ldrexb  %0, [%1]        \n"
-            // "   strexb  r3, %2, [%1]    \n"
-            // "   cmp     r3, #0          \n"
-            // "   bne     1b              \n" : "=&r"(old) : "r"(&lock), "r"(one) : "r3", "cc");
+        ASM("nop");
         return old;
     }
 
@@ -93,23 +90,11 @@ public:
     static T finc(volatile T & value) {
         register T old;
         if(sizeof(T) == sizeof(Reg8))
-            // ASM("1: ldrexb  %0, [%1]        \n"
-                // "   add     %0, #1          \n"
-                // "   strexb  r3, %0, [%1]    \n"
-                // "   cmp     r3, #0          \n"
-                // "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         else if(sizeof(T) == sizeof(Reg16))
-            // ASM("1: ldrexh  %0, [%1]        \n"
-                // "   add     %0, #1          \n"
-                // "   strexh  r3, %0, [%1]    \n"
-                // "   cmp     r3, #0          \n"
-                // "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         else
-            // ASM("1: ldrex   %0, [%1]        \n"
-                // "   add     %0, #1          \n"
-                // "   strex   r3, %0, [%1]    \n"
-                // "   cmp     r3, #0          \n"
-                // "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         return old - 1;
     }
 
@@ -117,23 +102,11 @@ public:
     static T fdec(volatile T & value) {
         register T old;
         if(sizeof(T) == sizeof(Reg8))
-            // ASM("1: ldrexb  %0, [%1]        \n"
-            //     "   sub     %0, #1          \n"
-            //     "   strexb  r3, %0, [%1]    \n"
-            //     "   cmp     r3, #0          \n"
-            //     "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         else if(sizeof(T) == sizeof(Reg16))
-            // ASM("1: ldrexh  %0, [%1]        \n"
-            //     "   sub     %0, #1          \n"
-            //     "   strexh  r3, %0, [%1]    \n"
-            //     "   cmp     r3, #0          \n"
-            //     "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         else
-            // ASM("1: ldrex   %0, [%1]        \n"
-            //     "   sub     %0, #1          \n"
-            //     "   strex   r3, %0, [%1]    \n"
-            //     "   cmp     r3, #0          \n"
-            //     "   bne     1b              \n" : "=&r"(old) : "r"(&value) : "r3", "cc");
+            ASM("nop");
         return old + 1;
     }
 
@@ -141,49 +114,31 @@ public:
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;
         if(sizeof(T) == sizeof(Reg8))
-            // ASM("1: ldrexb  %0, [%1]        \n"
-            //     "   cmp     %0, %2          \n"
-            //     "   bne     2f              \n"
-            //     "   strexb  r3, %3, [%1]    \n"
-            //     "   cmp     r3, #0          \n"
-            //     "   bne     1b              \n"
-            //     "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "r3", "cc");
+            ASM("nop");
         else if(sizeof(T) == sizeof(Reg16))
-            // ASM("1: ldrexh  %0, [%1]        \n"
-            //     "   cmp     %0, %2          \n"
-            //     "   bne     2f              \n"
-            //     "   strexh  r3, %3, [%1]    \n"
-            //     "   cmp     r3, #0          \n"
-            //     "   bne     1b              \n"
-            //     "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "r3", "cc");
+            ASM("nop");
         else
-            // ASM("1: ldrex   %0, [%1]        \n"
-                // "   cmp     %0, %2          \n"
-                // "   bne     2f              \n"
-                // "   strex   r3, %3, [%1]    \n"
-                // "   cmp     r3, #0          \n"
-                // "   bne     1b              \n"
-                // "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "r3", "cc");
+            ASM("nop");
         return old;
     }
 
     // ARMv8 specifics
-    // static Reg r0() { Reg r; ASM("mov %0, r0" : "=r"(r) : : ); return r; }
-    // static void r0(Reg r) { ASM("mov r0, %0" : : "r"(r): ); }
+    static Reg r0() { Reg r; ASM("nop"); return r; }
+    static void r0(Reg r) { ASM("nop"); }
 
-    // static Reg r1() { Reg r; ASM("mov %0, r1" : "=r"(r) : : ); return r; }
-    // static void r1(Reg r) { ASM("mov r1, %0" : : "r"(r): ); }
+    static Reg r1() { Reg r; ASM("nop"); return r; }
+    static void r1(Reg r) { ASM("nop"); }
 
-    // static Reg sctlr() { Reg r; ASM("mrc p15, 0, %0, c1, c0, 0" : "=r"(r)); return r; }
-    // static void sctlr(Reg r) {  ASM("mcr p15, 0, %0, c1, c0, 0" : : "r"(r) : "r0"); }
+    static Reg sctlr() { Reg r; ASM("nop"); return r; }
+    static void sctlr(Reg r) {  ASM("nop"); }
 
-    // static Reg actlr() { Reg r; ASM("mrc p15, 0, %0, c1, c0, 1" : "=r"(r)); return r; }
-    // static void actlr(Reg r) {  ASM("mcr p15, 0, %0, c1, c0, 1" : : "r"(r) : "r0"); }
+    static Reg actlr() { Reg r; ASM("nop"); return r; }
+    static void actlr(Reg r) {  ASM("nop"); }
 
-    // static void dsb() { ASM("dsb"); }
-    // static void isb() { ASM("isb"); }
+    static void dsb() { ASM("nop"); }
+    static void isb() { ASM("nop"); }
 
-    // static void svc() { ASM("svc 0x0"); }
+    static void svc() { ASM("nop"); }
 };
 
 class ARMv8_M: public ARMv8
@@ -232,16 +187,18 @@ public:
     static unsigned int id() { return 0; }
     static unsigned int cores() { return 1; }
 
-    // static void int_enable()  { ASM("cpsie i"); }
-    // static void int_disable() { ASM("cpsid i"); }
-    // static bool int_enabled() { return !int_disabled(); }
+    static void int_enable()  { ASM("nop"); }
+    static void int_disable() { ASM("nop"); }
+    static bool int_enabled() { return !int_disabled(); }
     static bool int_disabled() {
         bool disabled;
-        // ASM("mrs %0, primask" : "=r"(disabled));
+        ASM("nop");
         return disabled;
     }
 
-    static void smp_barrier(unsigned long cores = cores()) { assert(cores == 1); }
+    static void smp_barrier() { smp_barrier(cores()); }
+
+    static void smp_barrier(unsigned long cores) { assert(cores == 1); }
 
     static Reg pd() { return 0; }       // no MMU
     static void pd(Reg r) {}            // no MMU
@@ -250,11 +207,11 @@ public:
     static void flush_tlb(Reg r) {}     // no MMU
 
     // ARMv8-M specifics
-    // static Flags flags() { Reg r; ASM("mrs %0, xpsr"       : "=r"(r) :); return r; }
-    // static void flags(Flags r) {  ASM("msr xpsr_nzcvq, %0" : : "r"(r) : "cc"); }
+    static Flags flags() { Reg r; ASM("nop"); return r; }
+    static void flags(Flags r) {  ASM("nop"); }
 
-    // static void psr_to_r12() { ASM("mrs r12, xpsr" : : : "r12"); }
-    // static void r12_to_psr() {  ASM("msr xpsr_nzcvq, r12" : : : "cc"); }
+    static void psr_to_r12() { ASM("nop"); }
+    static void r12_to_psr() {  ASM("nop"); }
 };
 
 class ARMv8_A: public ARMv8
@@ -339,7 +296,7 @@ public:
 
     static unsigned int id() {
         Reg id;
-        // ASM("mrc p15, 0, %0, c0, c0, 5" : "=r"(id) : : );
+        ASM("nop");
         return id & 0x3;
     }
 
@@ -348,8 +305,7 @@ public:
             return Traits<Build>::CPUS;
         } else {
             Reg n;
-            // ASM("mrc p15, 4, %0, c15, c0, 0 \t\n\
-            //      ldr %0, [%0, #0x004]" : "=r"(n) : : );
+            ASM("nop");
             return (n & 0x3) + 1;
         }
     }
@@ -360,33 +316,34 @@ public:
     static bool int_enabled() { return !int_disabled(); }
     static bool int_disabled() { return flags() & (FLAG_F | FLAG_I); }
 
-    static void smp_barrier(unsigned long cores = cores()) { CPU_Common::smp_barrier<&finc>(cores, id()); }
+    static void smp_barrier() { smp_barrier(cores()); }
+    static void smp_barrier(unsigned long cores) { CPU_Common::smp_barrier<&finc>(cores, id()); }
 
-    // static void fpu_save() {    ASM("vpush {s0-s15} \n vpush {s16-s31}"); }
-    // static void fpu_restore() { ASM("vpop  {s0-s15} \n vpop  {s16-s31}"); }
+    static void fpu_save() {    ASM("nop"); }
+    static void fpu_restore() { ASM("nop"); }
 
-    // ARMv8-A specifics
-    // static Reg cpsr() { Reg r; ASM("mrs %0, cpsr" : "=r"(r) : : ); return r; }
-    // static void cpsr(Reg r) { ASM("msr cpsr, %0" : : "r"(r) : "cc"); }
+    //ARMv8-A specifics
+    static Reg cpsr() { Reg r; ASM("nop"); return r; }
+    static void cpsr(Reg r) { ASM("nop"); }
 
-    // static Reg cpsrc() { Reg r; ASM("mrs %0, cpsr_c" : "=r"(r) : : ); return r; }
-    // static void cpsrc(Reg r) { ASM("msr cpsr_c, %0" : : "r"(r): ); }
+    static Reg cpsrc() { Reg r; ASM("nop"); return r; }
+    static void cpsrc(Reg r) { ASM("nop"); }
 
-    // static void psr_to_r12() { ASM("mrs r12, cpsr" : : : "r12"); }
-    // static void r12_to_psr() { ASM("msr cpsr, r12" : : : "cc"); }
+    static void psr_to_r12() { ASM("nop"); }
+    static void r12_to_psr() { ASM("nop"); }
 
     static void save_regs(bool ret = false) {
         if(ret)
-            // ASM("stmfd sp!, {r0-r3, r12, lr, pc}");
+            ASM("nop");
         else
-            // ASM("stmfd sp!, {r0-r3, r12, lr}");
+            ASM("nop");
     }
 
     static void restore_regs(bool ret = false) {
         if(ret)
-            // ASM("ldmfd   sp!, {r0-r3, r12, lr, pc}^");  // including PC in ldmfd cause a mode change to the mode given by PSR (the mode the CPU was before the interrupt)
+            ASM("nop");
         else
-            // ASM("ldmfd sp!, {r0-r3, r12, lr}");
+            ASM("nop");
     }
 
     // static void mode(unsigned int m) { ASM("msr cpsr_c, %0" : : "i"(m | FLAG_F | FLAG_I) : "cc"); }
@@ -395,88 +352,55 @@ public:
         mode(MODE_SVC);                 // go to SVC mode to save context
         save_regs(ret);                 // save current context (lr, sp and spsr are banked registers)
         mode(from);                     // go back to mode "from" to recover LR and PSR
-        // ASM("sub r1, lr, #4");          // r1 = return address when entering mode "from"
-        // ASM("mrs r2, spsr");            // r2 = "from"_spsr (to be visible at SVC)
+        ASM("nop");          // r1 = return address when entering mode "from"
+        ASM("nop");            // r2 = "from"_spsr (to be visible at SVC)
         mode(MODE_SVC);                 // go to SVC mode once again
         if(ret) {                       // if we will return, then
-            // ASM("str r1, [sp, #24]");   // overwrite the saved PC with r1, which contains the recovered return address
-            // ASM("push {r2}");           // push the recovered PSR
+            ASM("nop");   // overwrite the saved PC with r1, which contains the recovered return address
+            ASM("nop");           // push the recovered PSR
         }
         // upon return, r1 (LR) and r2 (PSR) are preserved and can be further used
     }
 
     static void svc_leave() {
-        // ASM("pop {r2}");            // pop saved mode "from" PSR into SVC_spsr
-        // ASM("msr spsr_cfxs, r2");
+        ASM("nop");            // pop saved mode "from" PSR into SVC_spsr
+        ASM("nop");
         restore_regs(true);              // restore the context, eventually changing back to "from" mode and jumping to the saved return address
     }
 
     static void svc_stay() { restore_regs(false); }
 
-    // static Reg elr_hyp() { Reg r; ASM("mrs %0, ELR_hyp" : "=r"(r) : : ); return r; }
-    // static void elr_hyp(Reg r) { ASM("msr ELR_hyp, %0" : : "r"(r): ); }
+    static Reg elr_hyp() { Reg r; ASM("nop"); return r; }
+    static void elr_hyp(Reg r) { ASM("nop"); }
 
-    // static void ldmia() { ASM("ldmia r0!,{r2,r3,r4,r5,r6,r7,r8,r9}" : : : ); }
-    // static void stmia() { ASM("stmia r1!,{r2,r3,r4,r5,r6,r7,r8,r9}" : : : ); }
+    static void ldmia() { ASM("nop"); }
+    static void stmia() { ASM("nop"); }
 
-    // CP15 operations
-    // static Reg ttbr0() { Reg r; ASM ("mrc p15, 0, %0, c2, c0, 0" : "=r"(r) : :); return r; }
-    // static void ttbr0(Reg r) {  ASM ("mcr p15, 0, %0, c2, c0, 0" : : "p"(r) :); }
+    //CP15 operations
+    static Reg ttbr0() {ASM ("nop"); return FLAG_M; }
+    static void ttbr0(Reg r) {  ASM ("nop"); }
 
-    // static Reg ttbcr() { Reg r; ASM ("mrc p15, 0, %0, c2, c0, 2" : "=r"(r) : :); return r; }
-    // static void ttbcr(Reg r) {  ASM ("mcr p15, 0, %0, c2, c0, 2" : : "p"(r) :); }
+    static Reg ttbcr() { Reg r; ASM ("nop"); return r; }
+    static void ttbcr(Reg r) {  ASM ("nop"); }
 
-    // static Reg dacr() { Reg r; ASM ("mrc p15, 0, %0, c3, c0, 0" : "=r"(r) : :); return r; }
-    // static void dacr(Reg r) {  ASM ("mcr p15, 0, %0, c3, c0, 0" : : "p"(r) :); }
+    static Reg dacr() { Reg r; ASM ("nop"); return r; }
+    static void dacr(Reg r) {  ASM ("nop"); }
 
     static Reg pd() { return ttbr0(); }
     static void pd(Reg r) {  ttbr0(r); }
 
-    // static void flush_tlb() {      ASM("mcr p15, 0, %0, c8, c7, 0" : : "r" (0)); } // TLBIALL - invalidate entire unifed TLB
-    // static void flush_tlb(Reg r) { ASM("mcr p15, 0, %0, c8, c7, 0" : : "r" (r)); }
+    static void flush_tlb() {      ASM("nop"); } // TLBIALL - invalidate entire unifed TLB
+    static void flush_tlb(Reg r) { ASM("nop"); }
 
-    // static void flush_branch_predictors() { ASM("mcr p15, 0, %0, c7, c5, 6" : : "r" (0)); }
+    static void flush_branch_predictors() { ASM("nop"); }
 
     static void flush_caches() {
-        // ASM("// Disable L1 Caches                                                                       \t\n\
-        //      mrc     p15, 0, r1, c1, c0, 0      // read SCTLR                                           \t\n\
-        //      bic     r1, r1, #(0x1 << 2)        // disable D Cache                                      \t\n\
-        //      mcr     p15, 0, r1, c1, c0, 0      // write SCTLR                                          \t\n\
-        //                                                                                                 \t\n\
-        //      // Invalidate Data cache, calculating the cache size and looping through each set and way  \t\n\
-        //      mov     r0, #0x0                   // r0 = 0x0 for L1 dcache 0x2 for L2 dcache             \t\n\
-        //      mcr     p15, 2, r0, c0, c0, 0      // CSSELR cache size selection Register                 \t\n\
-        //      mrc     p15, 1, r4, c0, c0, 0      // CCSIDR read cache size                               \t\n\
-        //      and     r1, r4, #0x7                                                                       \t\n\
-        //      add     r1, r1, #0x4               // r1 = cache line size                                 \t\n\
-        //      ldr     r3, =0x7fff                                                                        \t\n\
-        //      and     r2, r3, r4, lsr #13        // r2 = cache set number - 1                            \t\n\
-        //      ldr     r3, =0x3ff                                                                         \t\n\
-        //      and     r3, r3, r4, lsr #3         // r3 = cache associativity number - 1                  \t\n\
-        //      clz     r4, r3                     // r4 = way position in CISW instruction                \t\n\
-        //      mov     r5, #0                     // r5 = way loop counter                                \t\n\
-        //  way_loop:                                                                                      \t\n\
-        //      mov     r6, #0                     // r6 = set loop counter                                \t\n\
-        //  set_loop:                                                                                      \t\n\
-        //      orr     r7, r0, r5, lsl r4         // set way                                              \t\n\
-        //      orr     r7, r7, r6, lsl r1         // set set                                              \t\n\
-        //      mcr     p15, 0, r7, c7, c6, 2      // DCCISW r7                                            \t\n\
-        //      add     r6, r6, #1                 // increment set counter                                \t\n\
-        //      cmp     r6, r2                     // last set reached?                                    \t\n\
-        //      ble     set_loop                   // if not, iterate set_loop                             \t\n\
-        //      add     r5, r5, #1                 // else, next way                                       \t\n\
-        //      cmp     r5, r3                     // last way reached?                                    \t\n\
-        //      ble     way_loop                   // if not, iterate way_loop                                  ");
+        ASM("nop");
     }
 
     static void enable_fpu() {
         // This code assumes a compilation with mfloat-abi=hard and does not care for context switches
-        // ASM("mrc     p15, 0, r0, c1, c0, 2                                              \t\n\
-        //      orr     r0, r0, #0x300000           // single precision                    \t\n\
-        //      orr     r0, r0, #0xc00000           // double precision                    \t\n\
-        //      mcr     p15, 0, r0, c1, c0, 2                                              \t\n\
-        //      mov     r0, #0x40000000                                                    \t\n\
-        //      fmxr    fpexc,r0                                                                ");
+        ASM("nop");
     }
 
 };
